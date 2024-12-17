@@ -1,5 +1,6 @@
-package me.kavazar.scheduler.store;
+package me.kavazar.scheduler.store.impl;
 
+import me.kavazar.scheduler.store.TaskStore;
 import me.kavazar.scheduler.tasks.ScheduledTask;
 
 import java.util.Comparator;
@@ -10,7 +11,7 @@ public class PriorityBlockingQueueTaskStore implements TaskStore<ScheduledTask> 
     private final PriorityBlockingQueue<ScheduledTask> taskQueue;
 
     public PriorityBlockingQueueTaskStore() {
-        taskQueue = new PriorityBlockingQueue<>(11, Comparator.comparingLong(ScheduledTask::getExecutionTime));
+        taskQueue = new PriorityBlockingQueue<>(2, Comparator.comparingLong(ScheduledTask::getExecutionTime));
     }
 
     @Override

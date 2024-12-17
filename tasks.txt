@@ -1,0 +1,7 @@
+one-time-8000,8000
+one-time-2000-1,2000
+one-time-2000-2,2000
+recurring-5000-5000,5000,5000
+recurring-4000-4000,4000,4000
+one-time-1000,1000
+one-time-6000,6000
