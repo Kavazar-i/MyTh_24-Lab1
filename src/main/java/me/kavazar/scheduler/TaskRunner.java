@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 
-// Task Runner
 class TaskRunner implements Runnable {
     private static final Logger logger = LogManager.getLogger(TaskRunner.class);
     private final TaskStore<ScheduledTask> taskStore;

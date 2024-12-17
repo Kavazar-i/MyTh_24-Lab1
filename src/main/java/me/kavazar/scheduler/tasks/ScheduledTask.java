@@ -9,7 +9,6 @@ import me.kavazar.scheduler.context.ExecutionContext;
 
 import java.util.Optional;
 
-// Abstract Scheduled Task
 public abstract class ScheduledTask {
     public final ExecutionContext context;
     protected final long executionTime;

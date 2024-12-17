@@ -4,7 +4,6 @@ import me.kavazar.scheduler.context.ExecutionContext;
 
 import java.util.Optional;
 
-// Recurring Task Implementation
 public class RecurringTask extends ScheduledTask {
     private final long interval;
 

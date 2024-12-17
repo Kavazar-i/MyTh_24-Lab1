@@ -3,7 +3,6 @@ package me.kavazar.scheduler.state.impl;
 import me.kavazar.scheduler.state.TaskState;
 import me.kavazar.scheduler.tasks.ScheduledTask;
 
-// State for Executing Task
 public class ExecutingState implements TaskState {
     @Override
     public void execute(ScheduledTask task) {

@@ -6,7 +6,6 @@ import me.kavazar.scheduler.tasks.ScheduledTask;
 import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;
 
-// Priority Blocking Queue Task Store Implementation
 public class PriorityBlockingQueueTaskStore implements TaskStore<ScheduledTask> {
     private final PriorityBlockingQueue<ScheduledTask> taskQueue;
 
