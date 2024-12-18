@@ -13,15 +13,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class TaskScheduler {
     private static final Logger logger = LogManager.getLogger(TaskScheduler.class);
     private final ExecutorService executor;
     private final TaskStore<ScheduledTask> taskStore;
+    private final CountDownLatch tasksCompletedLatch;
 
     public TaskScheduler(int numThreads) {
         executor = Executors.newFixedThreadPool(numThreads);
         taskStore = new PriorityBlockingQueueTaskStore();
+        tasksCompletedLatch = new CountDownLatch(numThreads);
     }
 
     public void scheduleTask(ScheduledTask task) {
@@ -31,36 +34,33 @@ public class TaskScheduler {
     public void start() {
         for (int i = 0; i < ((ThreadPoolExecutor) executor).getCorePoolSize(); i++) {
             executor.submit(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
+                try {
+                    while (true) {
                         ScheduledTask task = taskStore.poll();
+                        if (task == null && taskStore.isEmpty()) {
+                            logger.info("All tasks completed.");
+                            break;  // Завершить поток
+                        }
+
                         if (task == null) {
-                            if (taskStore.isEmpty()) {
-                                logger.info("All tasks completed.");
-                                stop();
-                            }
                             TimeUnit.MILLISECONDS.sleep(100);
                             continue;
                         }
 
-                        long currentTime = System.currentTimeMillis();
-                        long delay = task.getExecutionTime() - currentTime;
-
+                        long delay = task.getExecutionTime() - System.currentTimeMillis();
                         if (delay > 0) {
                             taskStore.add(task);
                             TimeUnit.MILLISECONDS.sleep(Math.min(delay, 100));
                         } else {
                             task.execute();
-                            if (task.isRecurring() && task.nextScheduledTask().isPresent()) {
-                                taskStore.add(task.nextScheduledTask().get());
-                            }
+                            task.nextScheduledTask().ifPresent(taskStore::add);
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        logger.error("Task execution interrupted", e);
-                    } catch (Exception e) {
-                        logger.error("Task execution error", e);
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.error("Task execution interrupted", e);
+                } finally {
+                    tasksCompletedLatch.countDown();  // Уменьшить счетчик при завершении потока
                 }
             });
         }
@@ -68,12 +68,9 @@ public class TaskScheduler {
     }
 
     public void stop() {
-        executor.shutdown();
         try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-                logger.warn("Force shutdown initiated.");
-            }
+            tasksCompletedLatch.await();  // Ждать завершения всех потоков
+            executor.shutdown();
             logger.info("Task Scheduler stopped.");
         } catch (InterruptedException e) {
             logger.error("Shutdown interrupted", e);
@@ -88,5 +85,6 @@ public class TaskScheduler {
         tasks.forEach(scheduler::scheduleTask);
 
         scheduler.start();
+        scheduler.stop();  // Ожидать завершения всех потоков перед остановкой
     }
 }
