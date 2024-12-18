@@ -1,7 +1,7 @@
 package me.kavazar.scheduler.store.impl;
 
 import me.kavazar.scheduler.store.TaskStore;
-import me.kavazar.scheduler.tasks.ScheduledTask;
+import me.kavazar.scheduler.task.ScheduledTask;
 
 import java.util.Comparator;
 import java.util.concurrent.PriorityBlockingQueue;

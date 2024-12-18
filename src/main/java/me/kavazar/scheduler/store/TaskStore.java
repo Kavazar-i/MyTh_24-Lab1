@@ -1,6 +1,6 @@
 package me.kavazar.scheduler.store;
 
-import me.kavazar.scheduler.tasks.ScheduledTask;
+import me.kavazar.scheduler.task.ScheduledTask;
 
 public interface TaskStore<T extends ScheduledTask> {
     T poll();

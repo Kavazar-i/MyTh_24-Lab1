@@ -1,4 +1,4 @@
-package me.kavazar.scheduler.tasks;
+package me.kavazar.scheduler.task;
 
 
 import me.kavazar.scheduler.state.impl.CompletedState;

@@ -1,8 +1,8 @@
 package me.kavazar.scheduler;
 
-import me.kavazar.scheduler.tasks.OneTimeTask;
-import me.kavazar.scheduler.tasks.RecurringTask;
-import me.kavazar.scheduler.tasks.ScheduledTask;
+import me.kavazar.scheduler.task.OneTimeTask;
+import me.kavazar.scheduler.task.RecurringTask;
+import me.kavazar.scheduler.task.ScheduledTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

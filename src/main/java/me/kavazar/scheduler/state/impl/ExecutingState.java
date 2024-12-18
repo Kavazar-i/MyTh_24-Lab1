@@ -1,7 +1,7 @@
 package me.kavazar.scheduler.state.impl;
 
 import me.kavazar.scheduler.state.TaskState;
-import me.kavazar.scheduler.tasks.ScheduledTask;
+import me.kavazar.scheduler.task.ScheduledTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
