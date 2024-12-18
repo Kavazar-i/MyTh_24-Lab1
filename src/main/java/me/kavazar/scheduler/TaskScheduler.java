@@ -11,20 +11,21 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TaskScheduler {
     private static final Logger logger = LogManager.getLogger(TaskScheduler.class);
     private final ExecutorService executor;
     private final TaskStore<ScheduledTask> taskStore;
     private final CountDownLatch tasksCompletedLatch;
+    private final AtomicBoolean tasksCompleted = new AtomicBoolean(false);
 
     public TaskScheduler(int numThreads) {
         executor = Executors.newFixedThreadPool(numThreads);
         taskStore = new PriorityBlockingQueueTaskStore();
-        tasksCompletedLatch = new CountDownLatch(numThreads);
+        tasksCompletedLatch = new CountDownLatch(1);
     }
 
     public void scheduleTask(ScheduledTask task) {
@@ -32,44 +33,45 @@ public class TaskScheduler {
     }
 
     public void start() {
-        for (int i = 0; i < ((ThreadPoolExecutor) executor).getCorePoolSize(); i++) {
-            executor.submit(() -> {
-                try {
-                    while (true) {
-                        ScheduledTask task = taskStore.poll();
-                        if (task == null && taskStore.isEmpty()) {
+        executor.submit(() -> {
+            try {
+                while (true) {
+                    ScheduledTask task = taskStore.poll();
+
+                    if (task == null && taskStore.isEmpty()) {
+                        if (tasksCompleted.compareAndSet(false, true)) {
                             logger.info("All tasks completed.");
-                            break;  // Завершить поток
+                            tasksCompletedLatch.countDown();
                         }
-
-                        if (task == null) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            continue;
-                        }
-
-                        long delay = task.getExecutionTime() - System.currentTimeMillis();
-                        if (delay > 0) {
-                            taskStore.add(task);
-                            TimeUnit.MILLISECONDS.sleep(Math.min(delay, 100));
-                        } else {
-                            task.execute();
-                            task.nextScheduledTask().ifPresent(taskStore::add);
-                        }
+                        break;
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.error("Task execution interrupted", e);
-                } finally {
-                    tasksCompletedLatch.countDown();  // Уменьшить счетчик при завершении потока
+
+                    if (task == null) {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                        continue;
+                    }
+
+                    long delay = task.getExecutionTime() - System.currentTimeMillis();
+                    if (delay > 0) {
+                        taskStore.add(task);
+                        TimeUnit.MILLISECONDS.sleep(Math.min(delay, 100));
+                    } else {
+                        task.execute();
+                        task.nextScheduledTask().ifPresent(taskStore::add);
+                    }
                 }
-            });
-        }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Task execution interrupted", e);
+            }
+        });
+
         logger.info("Task Scheduler started.");
     }
 
     public void stop() {
         try {
-            tasksCompletedLatch.await();  // Ждать завершения всех потоков
+            tasksCompletedLatch.await();
             executor.shutdown();
             logger.info("Task Scheduler stopped.");
         } catch (InterruptedException e) {
@@ -85,6 +87,6 @@ public class TaskScheduler {
         tasks.forEach(scheduler::scheduleTask);
 
         scheduler.start();
-        scheduler.stop();  // Ожидать завершения всех потоков перед остановкой
+        scheduler.stop();
     }
 }
