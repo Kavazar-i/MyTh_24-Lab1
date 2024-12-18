@@ -35,6 +35,10 @@ public class TaskScheduler {
                     try {
                         ScheduledTask task = taskStore.poll();
                         if (task == null) {
+                            if (taskStore.isEmpty()) {
+                                logger.info("All tasks completed.");
+                                stop();
+                            }
                             TimeUnit.MILLISECONDS.sleep(100);
                             continue;
                         }
@@ -47,10 +51,8 @@ public class TaskScheduler {
                             TimeUnit.MILLISECONDS.sleep(Math.min(delay, 100));
                         } else {
                             task.execute();
-
                             if (task.isRecurring() && task.nextScheduledTask().isPresent()) {
-                                ScheduledTask nextTask = task.nextScheduledTask().get();
-                                taskStore.add(nextTask);
+                                taskStore.add(task.nextScheduledTask().get());
                             }
                         }
                     } catch (InterruptedException e) {
@@ -66,18 +68,25 @@ public class TaskScheduler {
     }
 
     public void stop() {
-        executor.shutdownNow();
-        logger.info("Task Scheduler stopped.");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                logger.warn("Force shutdown initiated.");
+            }
+            logger.info("Task Scheduler stopped.");
+        } catch (InterruptedException e) {
+            logger.error("Shutdown interrupted", e);
+            Thread.currentThread().interrupt();
+        }
     }
 
     public static void main(String[] args) throws IOException {
-        logger.info("Log system initialized");
         TaskScheduler scheduler = new TaskScheduler(4);
 
         List<ScheduledTask> tasks = TaskLoader.loadTasksFromFile("./src/main/resources/tasks.txt");
         tasks.forEach(scheduler::scheduleTask);
 
         scheduler.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(scheduler::stop));
     }
 }
