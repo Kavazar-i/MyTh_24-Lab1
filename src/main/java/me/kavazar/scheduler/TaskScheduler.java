@@ -71,6 +71,7 @@ public class TaskScheduler {
     }
 
     public static void main(String[] args) throws IOException {
+        logger.info("Log system initialized");
         TaskScheduler scheduler = new TaskScheduler(4);
 
         List<ScheduledTask> tasks = TaskLoader.loadTasksFromFile("./src/main/resources/tasks.txt");
